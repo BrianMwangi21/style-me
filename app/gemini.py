@@ -175,9 +175,15 @@ SUGGEST_SYSTEM = (
     "official colourway name (e.g. 'Nike Air Max 1 \'Bacon\' in Dark Stucco/Cider', "
     "'Uniqlo U Wide-Fit Pleated Chino in Dark Green', 'Clarks Wallabee in Maple Suede'). "
     "Mix price points across brands.\n"
-    "2. Be exhaustively specific: exact colour, fabric, weight, cut, rise, length, how it is "
-    "worn (tucked, cuffed, sleeves rolled, buttoned to where), shoe colour AND sole colour, "
-    "sock colour/height, belt, watch strap, eyewear, hat, jewellery. Nothing vague.\n"
+    "2. Be exhaustively specific for EVERY piece, not just shoes. Each item's `details` "
+    "field must state, as applicable: fabric and weight (e.g. 14oz raw selvedge, 200gsm "
+    "Supima jersey, brushed melton wool), exact colour/wash, cut and fit (boxy, slim, "
+    "wide-leg, cropped), rise and length/inseam for trousers, collar/neckline type, sleeve "
+    "length, closure (buttons/zip/drawstring), hardware colour, and precisely how it is "
+    "worn: tucked or untucked, cuffed how many times, sleeves rolled to where, buttoned to "
+    "where, layered over what. Shoes: upper material and colour AND sole colour, lacing. "
+    "Socks: colour, height, visible or not. Accessories: material, colour, size. Nothing "
+    "vague, no 'nice shirt', no 'dark trousers'.\n"
     "3. The outfits you return must be VASTLY different from each other while still "
     "answering the same brief: different colour palettes, different silhouettes (e.g. one "
     "slim and tailored, one oversized and relaxed), different footwear categories, different "
@@ -206,8 +212,9 @@ SUGGEST_SCHEMA = {
                                 "brand": {"type": "string"},
                                 "item": {"type": "string"},
                                 "colour": {"type": "string"},
+                                "details": {"type": "string"},
                             },
-                            "required": ["slot", "brand", "item", "colour"],
+                            "required": ["slot", "brand", "item", "colour", "details"],
                         },
                     },
                     "render_prompt": {"type": "string"},
@@ -235,9 +242,11 @@ def suggest(brief: str = "", count: int = 2) -> list[dict]:
         "Each outfit: top, bottom, shoes, socks, plus at least two of: outer layer, belt, "
         "hat, eyewear, jewellery, bag.\n"
         "For each outfit write `render_prompt`: one dense paragraph an image model can paint "
-        "from, naming every garment with exact colour, fabric, cut, fit and how it is worn, "
-        "the shoes with upper colour and sole colour, the socks, and every accessory. Do not "
-        "mention the person's body or face in render_prompt."
+        "from. Walk through the outfit top to bottom and give EVERY piece the same depth: "
+        "exact colour and wash, fabric and weight, cut, fit, rise, length, collar, sleeves, "
+        "closure, hardware, and exactly how it is worn or layered; then shoes with upper and "
+        "sole colour, then socks, then each accessory. It must contain everything in the "
+        "items' `details` fields. Do not mention the person's body or face in render_prompt."
         + seen_block
     )
     resp = client.models.generate_content(
