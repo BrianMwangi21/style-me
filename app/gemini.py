@@ -166,13 +166,23 @@ def delete_output(oid: str) -> None:
 # ----------------------------------------------------------------------------
 
 SUGGEST_SYSTEM = (
-    "You are a sharp, practical personal stylist. The client is a Black man in his "
-    "late twenties or thirties, average-to-stocky build with a soft midsection, "
-    "broad shoulders. Suggest outfits that flatter that build (structured shoulders, "
-    "clean lines, mid-weight fabrics, avoid clingy tops). Use REAL, currently sold "
-    "items from real brands at a mix of price points (e.g. Uniqlo, COS, Zara, "
-    "Nike, Adidas, Levi's, Carhartt WIP, Ralph Lauren, Massimo Dutti, Arket, "
-    "Clarks, New Balance). Be specific about colour, fabric and fit. "
+    "You are a sharp, opinionated personal stylist with encyclopaedic product knowledge. "
+    "The client is a Black man in his late twenties or thirties, average-to-stocky build "
+    "with a soft midsection and broad shoulders. Flatter that build: structured shoulders, "
+    "clean lines, mid-weight fabrics, nothing clingy across the stomach.\n\n"
+    "RULES:\n"
+    "1. Every item must be a REAL, currently sold product: brand + exact product name + "
+    "official colourway name (e.g. 'Nike Air Max 1 \'Bacon\' in Dark Stucco/Cider', "
+    "'Uniqlo U Wide-Fit Pleated Chino in Dark Green', 'Clarks Wallabee in Maple Suede'). "
+    "Mix price points across brands.\n"
+    "2. Be exhaustively specific: exact colour, fabric, weight, cut, rise, length, how it is "
+    "worn (tucked, cuffed, sleeves rolled, buttoned to where), shoe colour AND sole colour, "
+    "sock colour/height, belt, watch strap, eyewear, hat, jewellery. Nothing vague.\n"
+    "3. The outfits you return must be VASTLY different from each other while still "
+    "answering the same brief: different colour palettes, different silhouettes (e.g. one "
+    "slim and tailored, one oversized and relaxed), different footwear categories, different "
+    "layering. If they could be mistaken for each other, you have failed.\n"
+    "4. Never repeat or closely resemble anything in the 'already generated' list.\n"
     "Return ONLY JSON matching the schema."
 )
 
@@ -210,16 +220,25 @@ SUGGEST_SCHEMA = {
 }
 
 
-def suggest(brief: str = "", count: int = 4) -> list[dict]:
+def suggest(brief: str = "", count: int = 2) -> list[dict]:
     from google.genai import types
 
     client = config.get_client()
+    seen = [o["prompt"] for o in list_outputs() if o.get("prompt")][:20]
+    seen_block = ""
+    if seen:
+        seen_block = "\n\nALREADY GENERATED (do not repeat these or anything close):\n- " + "\n- ".join(seen)
     ask = (
-        f"Suggest {count} distinct complete outfits (top, bottom, shoes, plus one "
-        f"optional layer or accessory). Brief from the client: '{brief or 'surprise me, everyday wear'}'. "
-        "For each outfit write `render_prompt`: one dense sentence describing every "
-        "garment (colour, fabric, cut, fit, how it is worn, footwear) so an image "
-        "model can paint it accurately. Do not mention the person's body in render_prompt."
+        f"Brief from the client: '{brief or 'surprise me, everyday wear'}'.\n"
+        f"Give {count} complete outfits that each answer this brief from a completely "
+        "different angle (palette, silhouette, footwear category, layering all different). "
+        "Each outfit: top, bottom, shoes, socks, plus at least two of: outer layer, belt, "
+        "hat, eyewear, jewellery, bag.\n"
+        "For each outfit write `render_prompt`: one dense paragraph an image model can paint "
+        "from, naming every garment with exact colour, fabric, cut, fit and how it is worn, "
+        "the shoes with upper colour and sole colour, the socks, and every accessory. Do not "
+        "mention the person's body or face in render_prompt."
+        + seen_block
     )
     resp = client.models.generate_content(
         model=config.TEXT_MODEL,
@@ -228,7 +247,7 @@ def suggest(brief: str = "", count: int = 4) -> list[dict]:
             system_instruction=SUGGEST_SYSTEM,
             response_mime_type="application/json",
             response_json_schema=SUGGEST_SCHEMA,
-            temperature=1.1,
+            temperature=1.3,
         ),
     )
     return json.loads(resp.text)["outfits"]

@@ -293,7 +293,7 @@ async function suggest(){
   const brief=$('#brief').value.trim(); const box=$('#outfits'); box.innerHTML='<span style="color:var(--muted)">Thinking…</span>';
   busy(true,'Asking the stylist…');
   try{
-    const {outfits}=await api('/api/suggest',{method:'POST',body:JSON.stringify({brief,count:4})});
+    const {outfits}=await api('/api/suggest',{method:'POST',body:JSON.stringify({brief,count:2})});
     box.innerHTML='';
     for(const o of outfits){
       const d=document.createElement('div'); d.className='outfit';
