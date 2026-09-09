@@ -79,6 +79,27 @@
   .thumb .del{position:absolute;top:3px;right:3px;width:20px;height:20px;padding:0;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;line-height:20px;display:none}
   .thumb:hover .del{display:block}
 
+  .looks-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .looks-head h2{margin:0}
+  .looks-head .hint{color:var(--muted);font-size:13px;margin-right:auto;margin-left:14px;display:none}
+  .looks.cmp .looks-head .hint{display:inline}
+  .looks.cmp #btnCompare{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .looks.cmp .thumb{cursor:copy}
+  .thumb .pick{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:12px;line-height:22px;text-align:center;display:none}
+  .thumb.picked{border-color:var(--accent)}
+  .thumb.picked .pick{display:block}
+  .thumb.base .lbl{color:var(--accent)}
+  .cmp-overlay{position:fixed;inset:0;background:rgba(10,10,12,.97);display:none;flex-direction:column;z-index:20;padding:18px 22px}
+  .cmp-overlay.on{display:flex}
+  .cmp-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .cmp-bar h2{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:auto}
+  .cmp-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:18px;min-height:0}
+  .cmp-side{display:flex;flex-direction:column;min-height:0;gap:8px}
+  .cmp-side .frame{flex:1;min-height:0;background:#fff;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .cmp-side .frame img{width:100%;height:100%;object-fit:contain}
+  .cmp-side .cap{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;height:2.9em}
+  .cmp-side .cap span{flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  @media (max-width:700px){.cmp-grid{grid-template-columns:1fr;overflow:auto}.cmp-side .frame{min-height:60vh}}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2a2a31;border:1px solid #3d3d47;color:var(--text);padding:10px 16px;border-radius:10px;max-width:80vw;display:none;z-index:9}
   .toast.err{border-color:var(--danger)}
   .toast.on{display:block}
@@ -87,7 +108,7 @@
 <body>
 <header>
   <h1>style<span>·</span>me</h1>
-  <small id="models"></small>
+  <nav style="display:flex;gap:18px;align-items:center"><a href="/gallery" style="color:var(--accent);text-decoration:none;font-weight:600">Gallery →</a><small id="models"></small></nav>
 </header>
 
 <main>
@@ -102,6 +123,7 @@
       <button class="small primary" id="btnShowBase" title="Strip everything back to the base look">↺ Reset to base look</button>
       <button class="small" id="btnRegenBase">Regenerate base look</button>
       <a id="btnDownload" class="small" hidden><button class="small">Download</button></a>
+      <a id="btnGallery" href="/gallery"><button class="small">Open in gallery</button></a>
     </div>
   </section>
 
@@ -133,15 +155,30 @@
 </main>
 <section class="looks">
   <div class="card">
-    <h2>Looks so far <span id="lookCount"></span></h2>
+    <div class="looks-head">
+      <h2>Looks so far <span id="lookCount"></span></h2>
+      <span class="hint" id="cmpHint">Pick two looks</span>
+      <button class="small" id="btnCompare">⇆ Compare</button>
+    </div>
     <div class="history" id="history"></div>
   </div>
 </section>
+<div class="cmp-overlay" id="cmp">
+  <div class="cmp-bar">
+    <h2>Compare</h2>
+    <button class="small" id="cmpSwap">⇆ Swap</button>
+    <button class="small" id="cmpClose">Close (Esc)</button>
+  </div>
+  <div class="cmp-grid">
+    <div class="cmp-side"><div class="frame"><img id="cmpA"></div><div class="cap"><span id="cmpCapA"></span><button class="small" id="cmpUseA">Open</button></div></div>
+    <div class="cmp-side"><div class="frame"><img id="cmpB"></div><div class="cap"><span id="cmpCapB"></span><button class="small" id="cmpUseB">Open</button></div></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { outputs: [], hasBase: false, current: 'base', garments: [] };
+const state = { outputs: [], hasBase: false, current: 'base', garments: [], compare: false, picked: [] };
 
 function toast(msg, err=false){ const t=$('#toast'); t.textContent=msg; t.className='toast on'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.className='toast', err?7000:3000); }
 function busy(on, text){ $('#busy').classList.toggle('on', on); if(text) $('#busyText').textContent=text; document.querySelectorAll('button').forEach(b=>b.disabled=on); if(!on) syncReset(); }
@@ -152,6 +189,7 @@ function showImage(url, caption, id){
   const img=$('#stageImg'); img.src=url+(url.includes('?')?'':'?t='+Date.now()); img.hidden=false; $('#stagePlaceholder').hidden=true;
   $('#caption').textContent=caption||''; state.current=id||'base';
   const dl=$('#btnDownload'); dl.href=url; dl.download=(id||'base')+'.png'; dl.hidden=false;
+  $('#btnGallery').href=(!id||id==='base')?'/gallery':'/gallery?id='+id;
   renderHistory();
   syncReset();
 }
@@ -164,19 +202,53 @@ async function load(){
   if(!state.hasBase && !state.outputs.length){ toast('No base look yet — generating one now.'); await regenBase(); }
 }
 
+function lookList(){
+  const list=[...state.outputs];
+  if(state.hasBase) list.unshift({id:'base', url:'/base.png', prompt:'Base look', base:true, garment_count:0});
+  return list;
+}
+function labelOf(o){ return o.prompt||`From ${o.garment_count} garment image(s)`; }
 function renderHistory(){
   const h=$('#history'); h.innerHTML='';
   $('#lookCount').textContent=state.outputs.length?`· ${state.outputs.length}`:'';
+  const list=lookList();
   if(!state.outputs.length){ h.innerHTML='<span style="color:var(--muted);font-size:13px">Nothing yet. Try something on.</span>'; return; }
-  for(const o of state.outputs){
-    const d=document.createElement('div'); d.className='thumb'+(state.current===o.id?' active':''); d.title=o.prompt||('garment image ×'+o.garment_count);
-    const lbl=o.prompt||`From ${o.garment_count} garment image(s)`;
-    d.innerHTML=`<div class="pic"><img src="${o.url}" loading="lazy"></div><div class="lbl">${lbl.replace(/</g,'&lt;')}</div><button class="del" title="Delete">×</button>`;
-    d.onclick=()=>showImage(o.url, o.prompt||`From ${o.garment_count} garment image(s)`, o.id);
-    d.querySelector('.del').onclick=async e=>{ e.stopPropagation(); await api('/api/outputs/'+o.id,{method:'DELETE'}); state.outputs=state.outputs.filter(x=>x.id!==o.id); if(state.current===o.id) showBase(); renderHistory(); };
+  for(const o of list){
+    const d=document.createElement('div');
+    const pickIdx=state.picked.indexOf(o.id);
+    d.className='thumb'+(state.current===o.id?' active':'')+(o.base?' base':'')+(pickIdx>=0?' picked':'');
+    d.title=labelOf(o);
+    d.innerHTML=`<div class="pic"><img src="${o.url}" loading="lazy"></div><div class="lbl">${labelOf(o).replace(/</g,'&lt;')}</div><div class="pick">${pickIdx>=0?pickIdx+1:''}</div>${o.base?'':'<button class="del" title="Delete">×</button>'}`;
+    d.onclick=()=>{ if(state.compare) pickForCompare(o); else showImage(o.url, labelOf(o), o.id); };
+    const del=d.querySelector('.del');
+    if(del) del.onclick=async e=>{ e.stopPropagation(); await api('/api/outputs/'+o.id,{method:'DELETE'}); state.outputs=state.outputs.filter(x=>x.id!==o.id); state.picked=state.picked.filter(x=>x!==o.id); if(state.current===o.id) showBase(); renderHistory(); };
     h.appendChild(d);
   }
 }
+
+// --- compare ---
+function setCompare(on){ state.compare=on; state.picked=[]; document.querySelector('.looks').classList.toggle('cmp',on); $('#cmpHint').textContent='Pick two looks'; renderHistory(); }
+function pickForCompare(o){
+  const i=state.picked.indexOf(o.id);
+  if(i>=0) state.picked.splice(i,1); else state.picked.push(o.id);
+  if(state.picked.length>2) state.picked.shift();
+  $('#cmpHint').textContent=state.picked.length===1?'Pick one more':'Pick two looks';
+  renderHistory();
+  if(state.picked.length===2) openCompare();
+}
+function openCompare(){
+  const list=lookList(); const [a,b]=state.picked.map(id=>list.find(o=>o.id===id));
+  if(!a||!b) return;
+  $('#cmpA').src=a.url; $('#cmpB').src=b.url; $('#cmpCapA').textContent=labelOf(a); $('#cmpCapB').textContent=labelOf(b); $('#cmpCapA').title=labelOf(a); $('#cmpCapB').title=labelOf(b);
+  $('#cmpUseA').onclick=()=>{ closeCompare(); showImage(a.url,labelOf(a),a.id); };
+  $('#cmpUseB').onclick=()=>{ closeCompare(); showImage(b.url,labelOf(b),b.id); };
+  $('#cmp').classList.add('on');
+}
+function closeCompare(){ $('#cmp').classList.remove('on'); setCompare(false); }
+$('#btnCompare').onclick=()=>setCompare(!state.compare);
+$('#cmpClose').onclick=closeCompare;
+$('#cmpSwap').onclick=()=>{ state.picked.reverse(); openCompare(); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if($('#cmp').classList.contains('on')) closeCompare(); else if(state.compare) setCompare(false); } });
 
 async function regenBase(){
   busy(true,'Painting your base look…');

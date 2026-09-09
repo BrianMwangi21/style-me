@@ -35,6 +35,11 @@ def index():
     return FileResponse(config.STATIC / "index.html")
 
 
+@app.get("/gallery")
+def gallery():
+    return FileResponse(config.STATIC / "gallery.html")
+
+
 @app.get("/base.png")
 def base_png():
     if not config.BASE_LOOK.exists():

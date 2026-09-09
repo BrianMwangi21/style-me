@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>style-me · gallery</title>
+<style>
+  :root{--bg:#0f0f11;--panel:#17171a;--panel2:#1f1f24;--line:#2a2a31;--text:#ececf1;--muted:#9a9aa6;--accent:#e8c170;--accent-ink:#1a1405;--danger:#e26d6d}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+  header h1 span{color:var(--accent)}
+  header a{color:var(--muted);text-decoration:none}
+  header a:hover{color:var(--text)}
+  header nav{display:flex;gap:18px;align-items:center}
+  header nav .count{color:var(--muted);font-size:13px}
+
+  .viewer{flex:1;min-height:0;display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:8px;padding:18px 22px 10px;max-width:1400px;width:100%;margin:0 auto}
+  .arrow{height:64px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .arrow:hover{border-color:var(--accent);color:var(--accent)}
+  .arrow:disabled{opacity:.25;cursor:default}
+  .stage{height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .frame{flex:1;min-height:0;aspect-ratio:9/16;max-width:100%;background:#fff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .frame img{width:100%;height:100%;object-fit:contain;display:block}
+  .frame .empty{color:#333;text-align:center;padding:20px}
+  .caption{display:flex;gap:12px;align-items:center;max-width:720px;width:100%;color:var(--muted);font-size:13.5px}
+  .caption .txt{flex:1;text-align:center}
+  .caption .txt b{color:var(--text);font-weight:600}
+  .caption a,.caption button{font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;text-decoration:none}
+  .caption a:hover,.caption button:hover{border-color:#3d3d47}
+  .caption button.danger{color:var(--danger)}
+
+  .strip{padding:10px 22px 20px;max-width:1400px;width:100%;margin:0 auto}
+  .strip .row{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 8px;scroll-behavior:smooth;scrollbar-width:thin}
+  .thumb{flex:0 0 auto;width:86px;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:#fff;border:2px solid transparent;cursor:pointer;opacity:.55;transition:.15s}
+  .thumb:hover{opacity:.9}
+  .thumb.active{border-color:var(--accent);opacity:1}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  kbd{background:#2a2a31;border-radius:5px;padding:1px 6px;font-family:inherit;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>style<span>·</span>me</h1>
+  <nav><span class="count" id="count"></span><a href="/">← back to studio</a></nav>
+</header>
+
+<section class="viewer">
+  <button class="arrow" id="prev" title="Previous (←)">‹</button>
+  <div class="stage">
+    <div class="frame"><img id="big" alt="" hidden><div class="empty" id="empty">No looks yet.<br>Go try something on.</div></div>
+    <div class="caption">
+      <span class="txt" id="cap"></span>
+      <a id="dl" download>Download</a>
+      <button class="danger" id="del">Delete</button>
+    </div>
+  </div>
+  <button class="arrow" id="next" title="Next (→)">›</button>
+</section>
+
+<section class="strip"><div class="row" id="row"></div></section>
+
+<script>
+const $=s=>document.querySelector(s);
+let looks=[], i=0;
+const label=o=>o.prompt||`From ${o.garment_count} garment image(s)`;
+
+async function load(){
+  const s=await (await fetch('/api/state')).json();
+  looks=s.outputs.slice();
+  const want=new URLSearchParams(location.search).get('id');
+  const k=looks.findIndex(o=>o.id===want); i=k>=0?k:0;
+  renderStrip(); show();
+}
+function show(){
+  const o=looks[i];
+  $('#count').textContent=looks.length?`${i+1} / ${looks.length}`:'';
+  $('#prev').disabled=i<=0; $('#next').disabled=i>=looks.length-1;
+  if(!o){ $('#big').hidden=true; $('#empty').hidden=false; $('#cap').textContent=''; $('#dl').hidden=true; $('#del').hidden=true; return; }
+  $('#big').src=o.url; $('#big').hidden=false; $('#empty').hidden=true;
+  $('#cap').textContent=label(o);
+  $('#dl').href=o.url; $('#dl').download=o.id+'.png'; $('#dl').hidden=false;
+  $('#del').hidden=false;
+  history.replaceState(null,'','/gallery?id='+o.id);
+  document.querySelectorAll('.thumb').forEach((t,k)=>t.classList.toggle('active',k===i));
+  const t=document.querySelectorAll('.thumb')[i]; if(t) t.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  // warm the neighbours so arrows feel instant
+  [i-1,i+1].forEach(k=>{ if(looks[k]) new Image().src=looks[k].url; });
+}
+function renderStrip(){
+  const r=$('#row'); r.innerHTML='';
+  looks.forEach((o,k)=>{ const d=document.createElement('div'); d.className='thumb'; d.title=label(o); d.innerHTML=`<img src="${o.url}" loading="lazy">`; d.onclick=()=>{i=k;show();}; r.appendChild(d); });
+}
+function step(d){ const n=i+d; if(n<0||n>=looks.length) return; i=n; show(); }
+$('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
+$('#del').onclick=async()=>{ const o=looks[i]; if(!o) return; if(!confirm('Delete this look?')) return; await fetch('/api/outputs/'+o.id,{method:'DELETE'}); looks.splice(i,1); if(i>=looks.length) i=Math.max(0,looks.length-1); renderStrip(); show(); };
+document.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') step(-1); if(e.key==='ArrowRight') step(1); if(e.key==='Home'){i=0;show();} if(e.key==='End'){i=looks.length-1;show();} });
+// swipe on touch
+let sx=null; document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{ if(sx===null) return; const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>50) step(dx<0?1:-1); sx=null; });
+load();
+</script>
+</body>
+</html>
