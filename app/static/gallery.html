@@ -16,15 +16,16 @@
   header nav{display:flex;gap:18px;align-items:center}
   header nav .count{color:var(--muted);font-size:13px}
 
-  .viewer{height:calc(100vh - 58px - 130px);min-height:520px;display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:8px;padding:18px 22px 10px;max-width:1400px;width:100%;margin:0 auto}
+  .viewer{height:calc(100vh - 58px);min-height:520px;display:grid;grid-template-columns:64px 1fr 64px;align-items:center;gap:8px;padding:14px 22px;max-width:1400px;width:100%;margin:0 auto}
   .arrow{height:64px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .arrow:hover{border-color:var(--accent);color:var(--accent)}
   .arrow:disabled{opacity:.25;cursor:default}
-  .stage{height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px}
-  .frame{flex:1;min-height:0;aspect-ratio:9/16;max-width:100%;background:#fff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .stage{height:100%;min-height:0;display:flex;justify-content:center}
+  .frame{height:100%;aspect-ratio:9/16;max-width:100%;background:#fff;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
   .frame img{width:100%;height:100%;object-fit:contain;display:block}
   .frame .empty{color:#333;text-align:center;padding:20px}
-  .caption{display:flex;gap:12px;align-items:center;max-width:720px;width:100%;color:var(--muted);font-size:13.5px}
+  .details{max-width:1400px;margin:0 auto;padding:6px 22px 14px;display:flex;justify-content:center}
+  .caption{display:flex;gap:12px;align-items:center;max-width:760px;width:100%;color:var(--muted);font-size:14px}
   .caption .txt{flex:1;text-align:center}
   .caption .txt b{color:var(--text);font-weight:600}
   .caption a,.caption button{font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;text-decoration:none}
@@ -50,13 +51,16 @@
   <button class="arrow" id="prev" title="Previous (←)">‹</button>
   <div class="stage">
     <div class="frame"><img id="big" alt="" hidden><div class="empty" id="empty">No looks yet.<br>Go try something on.</div></div>
-    <div class="caption">
-      <span class="txt" id="cap"></span>
-      <a id="dl" download>Download</a>
-      <button class="danger" id="del">Delete</button>
-    </div>
   </div>
   <button class="arrow" id="next" title="Next (→)">›</button>
+</section>
+
+<section class="details">
+  <div class="caption">
+    <span class="txt" id="cap"></span>
+    <a id="dl" download>Download</a>
+    <button class="danger" id="del">Delete</button>
+  </div>
 </section>
 
 <section class="strip"><div class="row" id="row"></div></section>
