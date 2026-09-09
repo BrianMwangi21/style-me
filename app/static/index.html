@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>style-me</title>
+<style>
+  :root{
+    --bg:#0f0f11;--panel:#17171a;--panel2:#1f1f24;--line:#2a2a31;--text:#ececf1;--muted:#9a9aa6;
+    --accent:#e8c170;--accent-ink:#1a1405;--danger:#e26d6d;--radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+  header h1 span{color:var(--accent)}
+  header small{color:var(--muted)}
+  main{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;padding:22px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+
+  .stage{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:10px}
+  .stage .frame{position:relative;aspect-ratio:9/16;background:#fff;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .stage img{width:100%;height:100%;object-fit:contain;display:block}
+  .stage .frame .placeholder{color:#333;text-align:center;padding:20px}
+  .stage .busy{position:absolute;inset:0;background:rgba(15,15,17,.72);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--text);font-weight:600}
+  .stage .busy.on{display:flex}
+  .spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .stage .caption{font-size:13px;color:var(--muted);min-height:1.4em}
+  .stage .row{display:flex;gap:8px;flex-wrap:wrap}
+
+  .controls{display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  textarea,input[type=text]{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;resize:vertical}
+  textarea:focus,input:focus{outline:none;border-color:var(--accent)}
+  button{font:inherit;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:10px;padding:9px 14px;cursor:pointer}
+  button:hover{border-color:#3d3d47}
+  button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+  button.primary:hover{filter:brightness(1.06)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.small{padding:5px 10px;font-size:13px}
+  button.danger{color:var(--danger)}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .toolbar label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;margin-left:auto}
+
+  .drop{border:1.5px dashed #3a3a44;border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:14px;transition:.15s}
+  .drop.over{border-color:var(--accent);color:var(--text);background:#1c1a14}
+  .drop kbd{background:#2a2a31;border-radius:5px;padding:1px 6px;font-family:inherit}
+  .garments{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .garment{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+  .garment img{width:100%;height:100%;object-fit:cover}
+  .garment button{position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;line-height:20px}
+
+  .outfits{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:12px}
+  .outfit{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+  .outfit{position:relative}
+  .outfit .x{position:absolute;top:6px;right:6px;width:22px;height:22px;padding:0;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:13px;line-height:22px}
+  .outfit .x:hover{background:var(--danger)}
+  .outfit h3{margin:0;font-size:15px;padding-right:22px}
+  .ideas-head{display:flex;align-items:center;justify-content:space-between}
+  .ideas-head button{display:none}
+  .ideas-head.has button{display:inline-block}
+  .outfit .vibe{color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .outfit ul{margin:4px 0;padding-left:16px;font-size:13px;color:#cfcfd8}
+  .outfit ul b{color:var(--text)}
+  .outfit .why{font-size:12.5px;color:var(--muted)}
+  .outfit .actions{display:flex;gap:6px;margin-top:auto;padding-top:6px}
+
+  .looks{max-width:1400px;margin:0 auto;padding:0 22px 40px}
+  .looks h2 span{color:var(--text);opacity:.6;font-weight:400;letter-spacing:0;text-transform:none}
+  .history{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+  .thumb{border-radius:10px;overflow:hidden;background:#fff;border:2px solid transparent;cursor:pointer;position:relative;display:flex;flex-direction:column}
+  .thumb .pic{aspect-ratio:9/16;overflow:hidden}
+  .thumb .lbl{background:var(--panel2);color:var(--muted);font-size:11.5px;line-height:1.3;padding:6px 8px;height:3.9em;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .thumb.active .lbl{color:var(--text)}
+  .thumb.active{border-color:var(--accent)}
+  .thumb .pic img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .del{position:absolute;top:3px;right:3px;width:20px;height:20px;padding:0;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:#fff;font-size:12px;line-height:20px;display:none}
+  .thumb:hover .del{display:block}
+
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#2a2a31;border:1px solid #3d3d47;color:var(--text);padding:10px 16px;border-radius:10px;max-width:80vw;display:none;z-index:9}
+  .toast.err{border-color:var(--danger)}
+  .toast.on{display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1>style<span>·</span>me</h1>
+  <small id="models"></small>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="frame">
+      <img id="stageImg" alt="Current look" hidden>
+      <div class="placeholder" id="stagePlaceholder">No base look yet.<br>Generate one to get started.</div>
+      <div class="busy" id="busy"><div class="spinner"></div><div id="busyText">Dressing you…</div></div>
+    </div>
+    <div class="caption" id="caption">Base look</div>
+    <div class="row">
+      <button class="small primary" id="btnShowBase" title="Strip everything back to the base look">↺ Reset to base look</button>
+      <button class="small" id="btnRegenBase">Regenerate base look</button>
+      <a id="btnDownload" class="small" hidden><button class="small">Download</button></a>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="card">
+      <h2>Describe an outfit</h2>
+      <textarea id="prompt" rows="3" placeholder="e.g. black leather biker jacket over a white tee, slim dark indigo jeans, white leather sneakers"></textarea>
+      <div class="drop" id="drop">
+        Paste a garment photo from any shop page with <kbd>Ctrl</kbd>+<kbd>V</kbd>, drag it here, or <label style="color:var(--accent);cursor:pointer">browse<input type="file" id="file" accept="image/*" multiple hidden></label>
+      </div>
+      <div class="garments" id="garments"></div>
+      <div class="toolbar">
+        <button class="primary" id="btnGenerate">Try it on</button>
+        <button id="btnClear">Clear</button>
+        <button id="btnReset" title="Strip everything back to the base look">↺ Reset to base</button>
+        <label><input type="checkbox" id="layer"> Build on current look</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ideas-head" id="ideasHead"><h2>Need ideas?</h2><button class="small" id="btnClearIdeas">Clear all</button></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="brief" placeholder="occasion or vibe: smart casual for a wedding, streetwear, Sunday service, gym-to-brunch…">
+        <button id="btnSuggest">Suggest</button>
+      </div>
+      <div class="outfits" id="outfits"></div>
+    </div>
+  </section>
+</main>
+<section class="looks">
+  <div class="card">
+    <h2>Looks so far <span id="lookCount"></span></h2>
+    <div class="history" id="history"></div>
+  </div>
+</section>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = { outputs: [], hasBase: false, current: 'base', garments: [] };
+
+function toast(msg, err=false){ const t=$('#toast'); t.textContent=msg; t.className='toast on'+(err?' err':''); clearTimeout(t._h); t._h=setTimeout(()=>t.className='toast', err?7000:3000); }
+function busy(on, text){ $('#busy').classList.toggle('on', on); if(text) $('#busyText').textContent=text; document.querySelectorAll('button').forEach(b=>b.disabled=on); if(!on) syncReset(); }
+function syncReset(){ const onBase=state.current==='base'; $('#btnShowBase').disabled=onBase; $('#btnReset').disabled=onBase; }
+async function api(path, opts={}){ const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts}); const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.detail||r.statusText); return j; }
+
+function showImage(url, caption, id){
+  const img=$('#stageImg'); img.src=url+(url.includes('?')?'':'?t='+Date.now()); img.hidden=false; $('#stagePlaceholder').hidden=true;
+  $('#caption').textContent=caption||''; state.current=id||'base';
+  const dl=$('#btnDownload'); dl.href=url; dl.download=(id||'base')+'.png'; dl.hidden=false;
+  renderHistory();
+  syncReset();
+}
+function showBase(){ if(state.hasBase) showImage('/base.png','Base look','base'); else { $('#stageImg').hidden=true; $('#stagePlaceholder').hidden=false; } }
+
+async function load(){
+  const s=await api('/api/state'); state.outputs=s.outputs; state.hasBase=s.has_base;
+  $('#models').textContent=`${s.image_model} · ${s.text_model}`;
+  if(state.current==='base') showBase(); renderHistory();
+  if(!state.hasBase && !state.outputs.length){ toast('No base look yet — generating one now.'); await regenBase(); }
+}
+
+function renderHistory(){
+  const h=$('#history'); h.innerHTML='';
+  $('#lookCount').textContent=state.outputs.length?`· ${state.outputs.length}`:'';
+  if(!state.outputs.length){ h.innerHTML='<span style="color:var(--muted);font-size:13px">Nothing yet. Try something on.</span>'; return; }
+  for(const o of state.outputs){
+    const d=document.createElement('div'); d.className='thumb'+(state.current===o.id?' active':''); d.title=o.prompt||('garment image ×'+o.garment_count);
+    const lbl=o.prompt||`From ${o.garment_count} garment image(s)`;
+    d.innerHTML=`<div class="pic"><img src="${o.url}" loading="lazy"></div><div class="lbl">${lbl.replace(/</g,'&lt;')}</div><button class="del" title="Delete">×</button>`;
+    d.onclick=()=>showImage(o.url, o.prompt||`From ${o.garment_count} garment image(s)`, o.id);
+    d.querySelector('.del').onclick=async e=>{ e.stopPropagation(); await api('/api/outputs/'+o.id,{method:'DELETE'}); state.outputs=state.outputs.filter(x=>x.id!==o.id); if(state.current===o.id) showBase(); renderHistory(); };
+    h.appendChild(d);
+  }
+}
+
+async function regenBase(){
+  busy(true,'Painting your base look…');
+  try{ await api('/api/base',{method:'POST'}); state.hasBase=true; showBase(); toast('Base look ready.'); }
+  catch(e){ toast(e.message,true); } finally{ busy(false); }
+}
+
+async function generate(promptOverride){
+  const prompt=(promptOverride ?? $('#prompt').value).trim();
+  if(!prompt && !state.garments.length) return toast('Describe an outfit or paste a garment image first.',true);
+  const source=$('#layer').checked ? state.current : 'base';
+  busy(true, state.garments.length ? 'Fitting your garment…' : 'Dressing you…');
+  try{
+    const rec=await api('/api/generate',{method:'POST',body:JSON.stringify({prompt,source,garments:state.garments})});
+    state.outputs.unshift(rec); showImage(rec.url, rec.prompt||`From ${rec.garment_count} garment image(s)`, rec.id);
+    toast('Done.');
+  }catch(e){ toast(e.message,true); } finally{ busy(false); }
+}
+
+// --- garment images: paste / drop / browse ---
+function addGarmentFile(file){
+  if(!file || !file.type.startsWith('image/')) return;
+  const r=new FileReader(); r.onload=()=>{ state.garments.push(r.result); renderGarments(); }; r.readAsDataURL(file);
+}
+function renderGarments(){
+  const g=$('#garments'); g.innerHTML='';
+  state.garments.forEach((src,i)=>{ const d=document.createElement('div'); d.className='garment'; d.innerHTML=`<img src="${src}"><button title="Remove">×</button>`; d.querySelector('button').onclick=()=>{state.garments.splice(i,1);renderGarments();}; g.appendChild(d); });
+}
+document.addEventListener('paste', e=>{
+  const items=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/'));
+  if(!items.length) return; e.preventDefault(); items.forEach(i=>addGarmentFile(i.getAsFile())); toast('Garment image added.');
+});
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop', e=>{ [...e.dataTransfer.files].forEach(addGarmentFile); });
+$('#file').onchange=e=>{ [...e.target.files].forEach(addGarmentFile); e.target.value=''; };
+
+// --- suggestions ---
+async function suggest(){
+  const brief=$('#brief').value.trim(); const box=$('#outfits'); box.innerHTML='<span style="color:var(--muted)">Thinking…</span>';
+  busy(true,'Asking the stylist…');
+  try{
+    const {outfits}=await api('/api/suggest',{method:'POST',body:JSON.stringify({brief,count:4})});
+    box.innerHTML='';
+    for(const o of outfits){
+      const d=document.createElement('div'); d.className='outfit';
+      d.innerHTML=`<button class="x" title="Remove">×</button><div class="vibe">${o.vibe}</div><h3>${o.name}</h3><ul>${o.items.map(i=>`<li><b>${i.brand}</b> ${i.item} — ${i.colour}</li>`).join('')}</ul><div class="why">${o.why}</div><div class="actions"><button class="primary small">Try it on</button><button class="small">Use as text</button></div>`;
+      const [xBtn,tryBtn,useBtn]=d.querySelectorAll('button');
+      xBtn.onclick=()=>{ d.remove(); syncIdeas(); };
+      tryBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; generate(o.render_prompt); };
+      useBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; $('#prompt').focus(); };
+      box.appendChild(d);
+    }
+    syncIdeas();
+  }catch(e){ box.innerHTML=''; syncIdeas(); toast(e.message,true); } finally{ busy(false); }
+}
+
+$('#btnGenerate').onclick=()=>generate();
+$('#btnClear').onclick=()=>{ $('#prompt').value=''; state.garments=[]; renderGarments(); };
+function syncIdeas(){ $('#ideasHead').classList.toggle('has', $('#outfits').children.length>0); }
+$('#btnClearIdeas').onclick=()=>{ $('#outfits').innerHTML=''; syncIdeas(); };
+$('#btnSuggest').onclick=suggest;
+$('#brief').addEventListener('keydown',e=>{ if(e.key==='Enter') suggest(); });
+$('#prompt').addEventListener('keydown',e=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) generate(); });
+$('#btnShowBase').onclick=showBase;
+$('#btnReset').onclick=showBase;
+$('#btnRegenBase').onclick=regenBase;
+load();
+</script>
+</body>
+</html>
