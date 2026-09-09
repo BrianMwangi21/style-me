@@ -80,7 +80,7 @@ async function load(){
 function show(){
   const o=looks[i];
   $('#count').textContent=looks.length?`${i+1} / ${looks.length}`:'';
-  $('#prev').disabled=i<=0; $('#next').disabled=i>=looks.length-1;
+  $('#prev').disabled=looks.length<2; $('#next').disabled=looks.length<2;
   if(!o){ $('#big').hidden=true; $('#empty').hidden=false; $('#cap').textContent=''; $('#dl').hidden=true; $('#del').hidden=true; return; }
   $('#big').src=o.url; $('#big').hidden=false; $('#empty').hidden=true;
   $('#cap').textContent=label(o);
@@ -89,13 +89,13 @@ function show(){
   history.replaceState(null,'','/gallery?id='+o.id);
   document.querySelectorAll('.thumb').forEach((t,k)=>t.classList.toggle('active',k===i));
   // warm the neighbours so arrows feel instant
-  [i-1,i+1].forEach(k=>{ if(looks[k]) new Image().src=looks[k].url; });
+  [i-1,i+1].forEach(k=>{ const o=looks[(k+looks.length)%looks.length]; if(o) new Image().src=o.url; });
 }
 function renderStrip(){
   const r=$('#row'); r.innerHTML='';
   looks.forEach((o,k)=>{ const d=document.createElement('div'); d.className='thumb'; d.title=label(o); d.innerHTML=`<img src="${o.url}" loading="lazy">`; d.onclick=()=>{i=k;show();}; r.appendChild(d); });
 }
-function step(d){ const n=i+d; if(n<0||n>=looks.length) return; i=n; show(); }
+function step(d){ if(!looks.length) return; i=(i+d+looks.length)%looks.length; show(); }
 $('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
 $('#del').onclick=async()=>{ const o=looks[i]; if(!o) return; if(!confirm('Delete this look?')) return; await fetch('/api/outputs/'+o.id,{method:'DELETE'}); looks.splice(i,1); if(i>=looks.length) i=Math.max(0,looks.length-1); renderStrip(); show(); };
 document.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') step(-1); if(e.key==='ArrowRight') step(1); if(e.key==='Home'){i=0;show();} if(e.key==='End'){i=looks.length-1;show();} });
