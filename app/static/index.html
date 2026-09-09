@@ -299,7 +299,7 @@ async function suggest(){
       d.innerHTML=`<button class="x" title="Remove">×</button><div class="vibe">${o.vibe}</div><h3>${o.name}</h3><ul>${o.items.map(i=>`<li><b>${i.brand}</b> ${i.item} — ${i.colour}</li>`).join('')}</ul><div class="why">${o.why}</div><div class="actions"><button class="primary small">Try it on</button><button class="small">Use as text</button></div>`;
       const [xBtn,tryBtn,useBtn]=d.querySelectorAll('button');
       xBtn.onclick=()=>{ d.remove(); syncIdeas(); };
-      tryBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; generate(o.render_prompt); };
+      tryBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; d.remove(); syncIdeas(); generate(o.render_prompt); };
       useBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; $('#prompt').focus(); };
       box.appendChild(d);
     }
