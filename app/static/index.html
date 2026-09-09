@@ -204,7 +204,7 @@ async function load(){
 
 function lookList(){
   const list=[...state.outputs];
-  if(state.hasBase) list.unshift({id:'base', url:'/base.png', prompt:'Base look', base:true, garment_count:0});
+  if(state.hasBase) list.push({id:'base', url:'/base.png', prompt:'Base look', base:true, garment_count:0});
   return list;
 }
 function labelOf(o){ return o.prompt||`From ${o.garment_count} garment image(s)`; }
