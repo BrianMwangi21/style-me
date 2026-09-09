@@ -39,6 +39,26 @@
   .thumb:hover{opacity:.9}
   .thumb.active{border-color:var(--accent);opacity:1}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .caption button.cmpbtn.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .hint{color:var(--muted);font-size:13px;display:none;padding:0 22px 6px;text-align:center}
+  body.cmp .hint{display:block}
+  body.cmp .thumb{cursor:copy;opacity:.7}
+  .thumb{position:relative}
+  .thumb .pick{position:absolute;top:5px;left:5px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:12px;line-height:22px;text-align:center;display:none}
+  .thumb.picked{border-color:var(--accent);opacity:1}
+  .thumb.picked .pick{display:block}
+  .cmp-overlay{position:fixed;inset:0;background:rgba(10,10,12,.97);display:none;flex-direction:column;z-index:20;padding:18px 22px}
+  .cmp-overlay.on{display:flex}
+  .cmp-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .cmp-bar h2{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:auto}
+  .cmp-bar button{font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer}
+  .cmp-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:18px;min-height:0}
+  .cmp-side{display:flex;flex-direction:column;min-height:0;gap:8px}
+  .cmp-side .frame{flex:1;min-height:0;height:auto;aspect-ratio:auto}
+  .cmp-side .cap{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start;height:2.9em}
+  .cmp-side .cap span{flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .cmp-side .cap button{font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer}
+  @media (max-width:700px){.cmp-grid{grid-template-columns:1fr;overflow:auto}.cmp-side .frame{min-height:60vh}}
   kbd{background:#2a2a31;border-radius:5px;padding:1px 6px;font-family:inherit;font-size:12px}
 </style>
 </head>
@@ -60,15 +80,29 @@
   <div class="caption">
     <span class="txt" id="cap"></span>
     <a id="dl" download>Download</a>
+    <button class="cmpbtn" id="btnCompare">⇆ Compare</button>
     <button class="danger" id="del">Delete</button>
   </div>
 </section>
+<div class="hint" id="cmpHint">Pick two looks below</div>
 
 <section class="strip"><div class="row" id="row"></div></section>
 
+<div class="cmp-overlay" id="cmp">
+  <div class="cmp-bar">
+    <h2>Compare</h2>
+    <button id="cmpSwap">⇆ Swap</button>
+    <button id="cmpClose">Close (Esc)</button>
+  </div>
+  <div class="cmp-grid">
+    <div class="cmp-side"><div class="frame"><img id="cmpA"></div><div class="cap"><span id="cmpCapA"></span><button id="cmpUseA">Open</button></div></div>
+    <div class="cmp-side"><div class="frame"><img id="cmpB"></div><div class="cap"><span id="cmpCapB"></span><button id="cmpUseB">Open</button></div></div>
+  </div>
+</div>
+
 <script>
 const $=s=>document.querySelector(s);
-let looks=[], i=0;
+let looks=[], i=0, compare=false, picked=[];
 const label=o=>o.prompt||`From ${o.garment_count} garment image(s)`;
 
 async function load(){
@@ -94,12 +128,35 @@ function show(){
 }
 function renderStrip(){
   const r=$('#row'); r.innerHTML='';
-  looks.forEach((o,k)=>{ const d=document.createElement('div'); d.className='thumb'; d.title=label(o); d.innerHTML=`<img src="${o.url}" loading="lazy">`; d.onclick=()=>{i=k;show();}; r.appendChild(d); });
+  looks.forEach((o,k)=>{ const d=document.createElement('div'); const pk=picked.indexOf(k); d.className='thumb'+(pk>=0?' picked':''); d.title=label(o); d.innerHTML=`<img src="${o.url}" loading="lazy"><div class="pick">${pk>=0?pk+1:''}</div>`; d.onclick=()=>{ if(compare) pickForCompare(k); else {i=k;show();} }; r.appendChild(d); });
 }
 function step(d){ if(!looks.length) return; i=(i+d+looks.length)%looks.length; show(); }
 $('#prev').onclick=()=>step(-1); $('#next').onclick=()=>step(1);
 $('#del').onclick=async()=>{ const o=looks[i]; if(!o) return; if(!confirm('Delete this look?')) return; await fetch('/api/outputs/'+o.id,{method:'DELETE'}); looks.splice(i,1); if(i>=looks.length) i=Math.max(0,looks.length-1); renderStrip(); show(); };
-document.addEventListener('keydown',e=>{ if(e.key==='ArrowLeft') step(-1); if(e.key==='ArrowRight') step(1); if(e.key==='Home'){i=0;show();} if(e.key==='End'){i=looks.length-1;show();} });
+// --- compare ---
+function setCompare(on){ compare=on; picked=[]; document.body.classList.toggle('cmp',on); $('#btnCompare').classList.toggle('on',on); $('#cmpHint').textContent='Pick two looks below'; renderStrip(); if(on) $('#cmpHint').scrollIntoView({block:'start',behavior:'smooth'}); }
+function pickForCompare(k){
+  const j=picked.indexOf(k);
+  if(j>=0) picked.splice(j,1); else picked.push(k);
+  if(picked.length>2) picked.shift();
+  $('#cmpHint').textContent=picked.length===1?'Pick one more':'Pick two looks below';
+  renderStrip();
+  if(picked.length===2) openCompare();
+}
+function openCompare(){
+  const [a,b]=picked.map(k=>looks[k]); if(!a||!b) return;
+  $('#cmpA').src=a.url; $('#cmpB').src=b.url;
+  $('#cmpCapA').textContent=label(a); $('#cmpCapB').textContent=label(b); $('#cmpCapA').title=label(a); $('#cmpCapB').title=label(b);
+  $('#cmpUseA').onclick=()=>{ const k=picked[0]; closeCompare(); i=k; show(); window.scrollTo({top:0,behavior:'smooth'}); };
+  $('#cmpUseB').onclick=()=>{ const k=picked[1]; closeCompare(); i=k; show(); window.scrollTo({top:0,behavior:'smooth'}); };
+  $('#cmp').classList.add('on');
+}
+function closeCompare(){ $('#cmp').classList.remove('on'); setCompare(false); }
+$('#btnCompare').onclick=()=>setCompare(!compare);
+$('#cmpClose').onclick=closeCompare;
+$('#cmpSwap').onclick=()=>{ picked.reverse(); openCompare(); };
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if($('#cmp').classList.contains('on')) closeCompare(); else if(compare) setCompare(false); return; } if($('#cmp').classList.contains('on')) return; if(e.key==='ArrowLeft') step(-1); if(e.key==='ArrowRight') step(1); if(e.key==='Home'){i=0;show();} if(e.key==='End'){i=looks.length-1;show();} });
 // swipe on touch
 let sx=null; document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
 document.addEventListener('touchend',e=>{ if(sx===null) return; const dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>50) step(dx<0?1:-1); sx=null; });
