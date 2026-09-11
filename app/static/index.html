@@ -63,6 +63,9 @@
   .ideas-head button{display:none}
   .ideas-head.has button{display:inline-block}
   .outfit .vibe{color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  .outfit .sig{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0}
+  .outfit .sig span{font-size:11px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  .outfit .hero{font-size:12.5px;color:var(--accent);margin:2px 0}
   .outfit ul{margin:4px 0;padding-left:16px;font-size:13px;color:#cfcfd8}
   .outfit ul b{color:var(--text)}
   .outfit ul li{margin-bottom:5px}
@@ -299,7 +302,7 @@ async function suggest(){
     box.innerHTML='';
     for(const o of outfits){
       const d=document.createElement('div'); d.className='outfit';
-      d.innerHTML=`<button class="x" title="Remove">×</button><div class="vibe">${o.vibe}</div><h3>${o.name}</h3><ul>${o.items.map(i=>`<li><b>${i.brand}</b> ${i.item} — ${i.colour}${i.details?`<div class="det">${i.details}</div>`:''}</li>`).join('')}</ul><div class="why">${o.why}</div><div class="actions"><button class="primary small">Try it on</button><button class="small">Use as text</button></div>`;
+      d.innerHTML=`<button class="x" title="Remove">×</button><div class="vibe">${o.vibe}</div><h3>${o.name}</h3>${o.signatures?.length?`<div class="sig">${o.signatures.map(x=>`<span>${x}</span>`).join('')}</div>`:''}${o.hero?`<div class="hero">★ ${o.hero}</div>`:''}<ul>${o.items.map(i=>`<li><b>${i.brand}</b> ${i.item} — ${i.colour}${i.details?`<div class="det">${i.details}</div>`:''}</li>`).join('')}</ul><div class="why">${o.why}</div><div class="actions"><button class="primary small">Try it on</button><button class="small">Use as text</button></div>`;
       const [xBtn,tryBtn,useBtn]=d.querySelectorAll('button');
       xBtn.onclick=()=>{ d.remove(); syncIdeas(); };
       tryBtn.onclick=()=>{ $('#prompt').value=o.render_prompt; d.remove(); syncIdeas(); generate(o.render_prompt); };

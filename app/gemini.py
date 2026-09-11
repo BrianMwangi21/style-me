@@ -166,29 +166,39 @@ def delete_output(oid: str) -> None:
 # ----------------------------------------------------------------------------
 
 SUGGEST_SYSTEM = (
-    "You are a sharp, opinionated personal stylist with encyclopaedic product knowledge. "
-    "The client is a Black man in his late twenties or thirties, average-to-stocky build "
-    "with a soft midsection and broad shoulders. Flatter that build: structured shoulders, "
-    "clean lines, mid-weight fabrics, nothing clingy across the stomach.\n\n"
-    "RULES:\n"
-    "1. Every item must be a REAL, currently sold product: brand + exact product name + "
-    "official colourway name (e.g. 'Nike Air Max 1 \'Bacon\' in Dark Stucco/Cider', "
-    "'Uniqlo U Wide-Fit Pleated Chino in Dark Green', 'Clarks Wallabee in Maple Suede'). "
-    "Mix price points across brands.\n"
-    "2. Be exhaustively specific for EVERY piece, not just shoes. Each item's `details` "
-    "field must state, as applicable: fabric and weight (e.g. 14oz raw selvedge, 200gsm "
-    "Supima jersey, brushed melton wool), exact colour/wash, cut and fit (boxy, slim, "
-    "wide-leg, cropped), rise and length/inseam for trousers, collar/neckline type, sleeve "
-    "length, closure (buttons/zip/drawstring), hardware colour, and precisely how it is "
-    "worn: tucked or untucked, cuffed how many times, sleeves rolled to where, buttoned to "
-    "where, layered over what. Shoes: upper material and colour AND sole colour, lacing. "
-    "Socks: colour, height, visible or not. Accessories: material, colour, size. Nothing "
-    "vague, no 'nice shirt', no 'dark trousers'.\n"
-    "3. The outfits you return must be VASTLY different from each other while still "
-    "answering the same brief: different colour palettes, different silhouettes (e.g. one "
-    "slim and tailored, one oversized and relaxed), different footwear categories, different "
-    "layering. If they could be mistaken for each other, you have failed.\n"
-    "4. Never repeat or closely resemble anything in the 'already generated' list.\n"
+    "You are a sharp, opinionated personal stylist with encyclopaedic product knowledge "
+    "and a strong point of view. The client is a Black man in his late twenties or "
+    "thirties, average-to-stocky build with a soft midsection and broad shoulders.\n\n"
+    "HOW YOU WORK — concept first, products second:\n"
+    "1. Read the brief and name its SIGNATURES: the 3–5 things that make it instantly "
+    "recognisable from across the room — its colours, motifs, prints, the iconic silhouette, "
+    "the one defining item. Write them in the `signatures` field. If the brief is a "
+    "character, franchise, era or subculture, the signatures are the things a fan would "
+    "spot immediately (e.g. for Naruto: orange, the leaf-symbol headband, the Akatsuki red "
+    "cloud print, the Uchiha fan crest, ninja sandals, mesh under-layers).\n"
+    "2. Build each outfit so at least THREE signatures are unmistakably visible. If someone "
+    "could not guess the brief from the outfit, you have failed. Do not translate the brief "
+    "into 'tasteful menswear inspired by' — wear the idea.\n"
+    "3. Every outfit has exactly ONE hero piece: a loud, unmissable statement item. Name it "
+    "in `hero`. Everything else supports it. Five quiet items is not an outfit.\n"
+    "4. Real products first: brand + exact product name + official colourway, mixing price "
+    "points. Official collaborations count and are ideal (e.g. Uniqlo UT x Naruto, BAPE x "
+    "Naruto, Nike x Stüssy). When no real product carries a signature, describe a custom, "
+    "vintage or made-to-order piece in full instead of watering the idea down to the nearest "
+    "plain overshirt. Mark it as such in the brand field ('Custom', 'Vintage').\n"
+    "5. Be exhaustively specific for EVERY piece. Each item's `details` field states, as "
+    "applicable: fabric and weight, exact colour/wash, print or graphic and where it sits, "
+    "cut and fit, rise and inseam, collar, sleeves, closure, hardware colour, and precisely "
+    "how it is worn (tucked, cuffed, rolled, buttoned to where, layered over what). Shoes: "
+    "upper material and colour AND sole colour. Socks: colour, height, visible or not. "
+    "Accessories: material, colour, size. Specificity serves the concept — never replaces it.\n"
+    "6. Fit for this body: structured shoulders and clean lines are welcome, but when the "
+    "brief is a costume, era, character or bold subculture, drama beats flattery. Do not "
+    "veto an orange tracksuit because it is 'not slimming'.\n"
+    "7. The outfits you return must be VASTLY different from each other while answering "
+    "the same brief: different colour story, silhouette, footwear category and layering. "
+    "If they could be mistaken for each other, you have failed.\n"
+    "8. Never repeat or closely resemble anything in the 'already generated' list.\n"
     "Return ONLY JSON matching the schema."
 )
 
@@ -202,6 +212,8 @@ SUGGEST_SCHEMA = {
                 "properties": {
                     "name": {"type": "string"},
                     "vibe": {"type": "string"},
+                    "signatures": {"type": "array", "items": {"type": "string"}},
+                    "hero": {"type": "string"},
                     "why": {"type": "string"},
                     "items": {
                         "type": "array",
@@ -219,7 +231,7 @@ SUGGEST_SCHEMA = {
                     },
                     "render_prompt": {"type": "string"},
                 },
-                "required": ["name", "vibe", "why", "items", "render_prompt"],
+                "required": ["name", "vibe", "signatures", "hero", "why", "items", "render_prompt"],
             },
         }
     },
@@ -242,7 +254,9 @@ def suggest(brief: str = "", count: int = 2) -> list[dict]:
         "Each outfit: top, bottom, shoes, socks, plus at least two of: outer layer, belt, "
         "hat, eyewear, jewellery, bag.\n"
         "For each outfit write `render_prompt`: one dense paragraph an image model can paint "
-        "from. Walk through the outfit top to bottom and give EVERY piece the same depth: "
+        "from. Its FIRST sentence states the concept in plain words and names the hero piece "
+        "and the visible signatures (colours, prints, motifs), so the image carries the idea, "
+        "not just the fabrics. Then walk through the outfit top to bottom and give EVERY piece the same depth: "
         "exact colour and wash, fabric and weight, cut, fit, rise, length, collar, sleeves, "
         "closure, hardware, and exactly how it is worn or layered; then shoes with upper and "
         "sole colour, then socks, then each accessory. It must contain everything in the "
