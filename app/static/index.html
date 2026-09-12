@@ -95,6 +95,11 @@
   .thumb.picked{border-color:var(--accent)}
   .thumb.picked .pick{display:block}
   .thumb.base .lbl{color:var(--accent)}
+  .thumb.more{text-decoration:none;background:var(--panel2);border-color:var(--line)}
+  .thumb.more .pic{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:13px;line-height:1.4}
+  .thumb.more .pic b{display:block;font-size:26px;color:var(--accent);margin-top:4px}
+  .thumb.more:hover{border-color:var(--accent)}
+  .thumb.more:hover .lbl{color:var(--text)}
   .cmp-overlay{position:fixed;inset:0;background:rgba(10,10,12,.97);display:none;flex-direction:column;z-index:20;padding:18px 22px}
   .cmp-overlay.on{display:flex}
   .cmp-bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -208,8 +213,9 @@ async function load(){
   if(!state.hasBase && !state.outputs.length){ toast('No base look yet — generating one now.'); await regenBase(); }
 }
 
+const HOME_LIMIT=10;
 function lookList(){
-  const list=[...state.outputs];
+  const list=state.outputs.slice(0,HOME_LIMIT);
   if(state.hasBase) list.push({id:'base', url:'/base.png', prompt:'Base look', base:true, garment_count:0});
   return list;
 }
@@ -229,6 +235,11 @@ function renderHistory(){
     const del=d.querySelector('.del');
     if(del) del.onclick=async e=>{ e.stopPropagation(); await api('/api/outputs/'+o.id,{method:'DELETE'}); state.outputs=state.outputs.filter(x=>x.id!==o.id); state.picked=state.picked.filter(x=>x!==o.id); if(state.current===o.id) showBase(); renderHistory(); };
     h.appendChild(d);
+  }
+  if(state.outputs.length>HOME_LIMIT){
+    const more=document.createElement('a'); more.className='thumb more'; more.href='/gallery';
+    more.innerHTML=`<div class="pic"><span>Show all<br><b>${state.outputs.length}</b></span></div><div class="lbl">Open the gallery</div>`;
+    h.appendChild(more);
   }
 }
 
