@@ -214,11 +214,7 @@ async function load(){
 }
 
 const HOME_LIMIT=10;
-function lookList(){
-  const list=state.outputs.slice(0,HOME_LIMIT);
-  if(state.hasBase) list.push({id:'base', url:'/base.png', prompt:'Base look', base:true, garment_count:0});
-  return list;
-}
+function lookList(){ return state.outputs.slice(0,HOME_LIMIT); }
 function labelOf(o){ return o.prompt||`From ${o.garment_count} garment image(s)`; }
 function renderHistory(){
   const h=$('#history'); h.innerHTML='';
