@@ -9,3 +9,4 @@ outputs/
 .venv/
 __pycache__/
 *.py[cod]
+.server.pid
